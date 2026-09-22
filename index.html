@@ -1,480 +1,439 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>科学计算器</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>2048</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
-    body {
-      min-height: 100vh;
-      background: linear-gradient(145deg, #f5f7fa 0%, #c3cfe2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-      padding: 16px;
-    }
+  body {
+    min-height: 100vh;
+    background: #faf8ef;
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: #776e65;
+  }
 
-    .calculator {
-      width: 380px;
-      background: #1e1e2f;
-      border-radius: 32px;
-      padding: 22px 18px 26px;
-      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 3px rgba(255, 255, 255, 0.1);
-    }
+  .game-container {
+    width: 100%;
+    max-width: 480px;
+  }
 
-    /* 显示屏 */
-    .display {
-      position: relative;
-      background: #0b0b12;
-      border-radius: 20px;
-      padding: 16px 16px 14px;
-      margin-bottom: 20px;
-      text-align: right;
-      box-shadow: inset 0 5px 8px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(255, 255, 255, 0.05);
-      border: 1px solid #2e2e44;
-      min-height: 108px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      word-break: break-all;
-    }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
 
-    .display .mode {
-      position: absolute;
-      top: 10px;
-      left: 14px;
-      font-size: 0.7rem;
-      color: #7a7a9a;
-      letter-spacing: 1px;
-      font-weight: 500;
-    }
+  .title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #776e65;
+    letter-spacing: -2px;
+  }
 
-    .display .previous {
-      color: #9a9ab0;
-      font-size: 1.05rem;
-      letter-spacing: 0.5px;
-      min-height: 22px;
-      font-weight: 400;
-      opacity: 0.85;
-      margin-top: 8px;
-    }
+  .scores {
+    display: flex;
+    gap: 8px;
+  }
 
-    .display .current {
-      color: #ffffff;
-      font-size: 2.8rem;
-      font-weight: 500;
-      line-height: 1.2;
-      letter-spacing: 1px;
-      text-shadow: 0 0 8px rgba(170, 200, 255, 0.4);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+  .score-box {
+    background: #bbada0;
+    padding: 8px 18px;
+    border-radius: 8px;
+    text-align: center;
+    color: #eee4da;
+    min-width: 80px;
+  }
 
-    /* 按钮网格 */
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
+  .score-box .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
 
-    button {
-      border: none;
-      outline: none;
-      background: #2b2b3f;
-      color: #f0f0f8;
-      font-size: 1.35rem;
-      font-weight: 500;
-      padding: 14px 4px;
-      border-radius: 16px;
-      cursor: pointer;
-      box-shadow: 0 6px 0 #15151e, 0 4px 8px rgba(0, 0, 0, 0.4);
-      transition: all 0.06s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: inherit;
-      line-height: 1;
-      letter-spacing: 0.3px;
-      border: 1px solid #3d3d58;
-    }
+  .score-box .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+  }
 
-    button:active {
-      transform: translateY(5px);
-      box-shadow: 0 1px 0 #15151e, 0 4px 8px rgba(0, 0, 0, 0.4);
-    }
+  .info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
 
-    /* 科学函数按钮 */
-    button.func {
-      background: #3a4a6b;
-      box-shadow: 0 6px 0 #222e44, 0 4px 8px rgba(0, 0, 0, 0.4);
-      color: #a8c8ff;
-      font-size: 1rem;
-      font-weight: 600;
-      border-color: #4a5d82;
-    }
+  .hint {
+    font-size: 0.9rem;
+    color: #8f857d;
+    line-height: 1.4;
+  }
 
-    button.func:active {
-      box-shadow: 0 1px 0 #222e44, 0 4px 8px rgba(0, 0, 0, 0.4);
-    }
+  .new-game-btn {
+    background: #8f7a66;
+    color: #f9f6f2;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
 
-    /* 运算符按钮 */
-    button.operator {
-      background: #f39c12;
-      box-shadow: 0 6px 0 #b46f0c, 0 4px 8px rgba(0, 0, 0, 0.4);
-      color: #1e1e2f;
-      font-weight: 700;
-      border-color: #f5b041;
-    }
+  .new-game-btn:hover { background: #9f8b77; }
 
-    button.operator:active {
-      box-shadow: 0 1px 0 #b46f0c, 0 4px 8px rgba(0, 0, 0, 0.4);
-    }
+  .grid-wrapper {
+    position: relative;
+    background: #bbada0;
+    border-radius: 10px;
+    padding: 12px;
+    touch-action: none;
+  }
 
-    /* 等号 */
-    button.equals {
-      background: #2ecc71;
-      box-shadow: 0 6px 0 #1f8b4c, 0 4px 8px rgba(0, 0, 0, 0.4);
-      color: #1e1e2f;
-      font-weight: 700;
-      border-color: #58d68d;
-      grid-column: span 2;
-    }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 12px;
+    aspect-ratio: 1 / 1;
+  }
 
-    button.equals:active {
-      box-shadow: 0 1px 0 #1f8b4c, 0 4px 8px rgba(0, 0, 0, 0.4);
-    }
-  </style>
+  .tile {
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    background: #cdc1b4;
+  }
+
+  .tile-2    { background: #eee4da; color: #776e65; }
+  .tile-4    { background: #ede0c8; color: #776e65; }
+  .tile-8    { background: #f2b179; color: #f9f6f2; }
+  .tile-16   { background: #f59563; color: #f9f6f2; }
+  .tile-32   { background: #f67c5f; color: #f9f6f2; }
+  .tile-64   { background: #f65e3b; color: #f9f6f2; }
+  .tile-128  { background: #edcf72; color: #f9f6f2; font-size: 1.7rem; }
+  .tile-256  { background: #edcc61; color: #f9f6f2; font-size: 1.7rem; }
+  .tile-512  { background: #edc850; color: #f9f6f2; font-size: 1.7rem; }
+  .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 1.4rem; }
+  .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 1.4rem; box-shadow: 0 0 30px rgba(237,194,46,0.7); }
+  .tile-super { background: #3c3a32; color: #f9f6f2; font-size: 1.2rem; }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(238, 228, 218, 0.85);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .overlay.win { background: rgba(237, 194, 46, 0.9); }
+
+  .overlay-text {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #776e65;
+    text-align: center;
+  }
+
+  .overlay.win .overlay-text { color: #f9f6f2; }
+
+  .overlay-btn {
+    background: #8f7a66;
+    color: #f9f6f2;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .overlay-btn:hover { background: #9f8b77; }
+
+  @media (max-width: 480px) {
+    .title { font-size: 2.5rem; }
+    .tile { font-size: 1.5rem; }
+    .tile-128, .tile-256, .tile-512 { font-size: 1.3rem; }
+    .tile-1024, .tile-2048 { font-size: 1.1rem; }
+    .hint { font-size: 0.8rem; }
+  }
+</style>
 </head>
 <body>
-  <div class="calculator">
-    <div class="display">
-      <div class="mode">角度</div>
-      <div class="previous" id="previous"></div>
-      <div class="current" id="current">0</div>
+  <div class="game-container">
+    <div class="header">
+      <div class="title">2048</div>
+      <div class="scores">
+        <div class="score-box">
+          <div class="label">分数</div>
+          <div class="value" id="score">0</div>
+        </div>
+        <div class="score-box">
+          <div class="label">最高</div>
+          <div class="value" id="best">0</div>
+        </div>
+      </div>
     </div>
-    <div class="buttons">
-      <!-- 第 1 行：三角函数 -->
-      <button class="func" value="sin">sin</button>
-      <button class="func" value="cos">cos</button>
-      <button class="func" value="tan">tan</button>
-      <button class="operator" value="÷">÷</button>
 
-      <!-- 第 2 行：幂与根号 -->
-      <button class="func" value="x²">x²</button>
-      <button class="func" value="x³">x³</button>
-      <button class="func" value="√">√</button>
-      <button class="operator" value="×">×</button>
+    <div class="info-bar">
+      <div class="hint">用方向键或滑动移动方块<br>相同数字合并，目标是 2048！</div>
+      <button class="new-game-btn" id="new-game">新游戏</button>
+    </div>
 
-      <!-- 第 3 行 -->
-      <button value="7">7</button>
-      <button value="8">8</button>
-      <button value="9">9</button>
-      <button class="operator" value="-">−</button>
-
-      <!-- 第 4 行 -->
-      <button value="4">4</button>
-      <button value="5">5</button>
-      <button value="6">6</button>
-      <button class="operator" value="+">+</button>
-
-      <!-- 第 5 行 -->
-      <button value="1">1</button>
-      <button value="2">2</button>
-      <button value="3">3</button>
-      <button class="operator" value="^">xʸ</button>
-
-      <!-- 第 6 行 -->
-      <button value="0">0</button>
-      <button value=".">.</button>
-      <button class="equals" value="=">=</button>
+    <div class="grid-wrapper">
+      <div class="grid" id="grid"></div>
+      <div class="overlay" id="overlay">
+        <div class="overlay-text" id="overlay-text"></div>
+        <button class="overlay-btn" id="overlay-btn">再来一局</button>
+      </div>
     </div>
   </div>
 
   <script>
     (function() {
-      let currentInput = '0';
-      let previousValue = null;
-      let currentOperator = null;
-      let waitingForNewNumber = false;
-      let justPressedOperator = false;
+      const SIZE = 4;
+      const gridEl = document.getElementById('grid');
+      const scoreEl = document.getElementById('score');
+      const bestEl = document.getElementById('best');
+      const overlayEl = document.getElementById('overlay');
+      const overlayTextEl = document.getElementById('overlay-text');
+      const overlayBtn = document.getElementById('overlay-btn');
+      const newGameBtn = document.getElementById('new-game');
 
-      const currentEl = document.getElementById('current');
-      const previousEl = document.getElementById('previous');
+      let board = [];
+      let score = 0;
+      let best = parseInt(localStorage.getItem('best2048') || '0', 10);
+      let gameOver = false;
+      let won = false;
+      let keepPlaying = false;
 
-      // ---------- 数字格式化 ----------
-      function formatNumber(num) {
-        if (!isFinite(num) || isNaN(num)) return 'Error';
-        // 处理极小的浮点误差
-        if (Math.abs(num) < 1e-12) num = 0;
-        let str = parseFloat(num.toFixed(12)).toString();
-        // 太大或太长时用科学计数法
-        if (str.length > 14) {
-          str = num.toExponential(8);
+      function init() {
+        board = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+        score = 0;
+        gameOver = false;
+        won = false;
+        keepPlaying = false;
+        overlayEl.classList.remove('show', 'win');
+        addRandomTile();
+        addRandomTile();
+        render();
+        updateScore();
+      }
+
+      function updateScore() {
+        scoreEl.textContent = score;
+        if (score > best) {
+          best = score;
+          localStorage.setItem('best2048', best);
         }
-        return str;
+        bestEl.textContent = best;
       }
 
-      // ---------- 显示更新 ----------
-      function updateDisplay() {
-        currentEl.textContent = currentInput;
-        if (previousValue !== null && currentOperator !== null) {
-          previousEl.textContent = `${previousValue} ${currentOperator}`;
-        }
-      }
-
-      // ---------- 重置 ----------
-      function resetCalculator() {
-        currentInput = '0';
-        previousValue = null;
-        currentOperator = null;
-        waitingForNewNumber = false;
-        justPressedOperator = false;
-        previousEl.textContent = '';
-        updateDisplay();
-      }
-
-      // ---------- 二元运算 ----------
-      function calculate(a, op, b) {
-        const numA = parseFloat(a);
-        const numB = parseFloat(b);
-        if (isNaN(numA) || isNaN(numB)) return 'Error';
-
-        let result;
-        switch (op) {
-          case '+': result = numA + numB; break;
-          case '-': result = numA - numB; break;
-          case '×': result = numA * numB; break;
-          case '÷':
-            if (numB === 0) return 'Error';
-            result = numA / numB;
-            break;
-          case '^':
-            result = Math.pow(numA, numB);
-            if (!isFinite(result)) return 'Error';
-            break;
-          default: return 'Error';
-        }
-        return formatNumber(result);
-      }
-
-      // ---------- 输入数字 ----------
-      function handleNumber(value) {
-        if (currentInput === 'Error' || waitingForNewNumber) {
-          currentInput = value;
-          waitingForNewNumber = false;
-        } else {
-          if (currentInput === '0') {
-            currentInput = value;
-          } else if (currentInput.length < 14) {
-            currentInput += value;
+      function addRandomTile() {
+        const empty = [];
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === 0) empty.push({ r, c });
           }
         }
-        justPressedOperator = false;
-        updateDisplay();
+        if (empty.length === 0) return;
+        const { r, c } = empty[Math.floor(Math.random() * empty.length)];
+        board[r][c] = Math.random() < 0.9 ? 2 : 4;
       }
 
-      // ---------- 小数点 ----------
-      function handleDecimal() {
-        if (currentInput === 'Error' || waitingForNewNumber) {
-          currentInput = '0.';
-          waitingForNewNumber = false;
-        } else if (!currentInput.includes('.')) {
-          currentInput += '.';
-        }
-        justPressedOperator = false;
-        updateDisplay();
-      }
-
-      // ---------- 二元运算符 ----------
-      function handleOperator(op) {
-        if (currentInput === 'Error') {
-          resetCalculator();
-          return;
-        }
-
-        if (justPressedOperator) {
-          currentOperator = op;
-          if (previousValue !== null) updateDisplay();
-          return;
-        }
-
-        if (previousValue === null) {
-          previousValue = currentInput;
-          currentOperator = op;
-          waitingForNewNumber = true;
-          justPressedOperator = true;
-        } else {
-          if (waitingForNewNumber) {
-            currentOperator = op;
-            justPressedOperator = true;
-            previousEl.textContent = `${previousValue} ${currentOperator}`;
-            return;
-          }
-          const result = calculate(previousValue, currentOperator, currentInput);
-          if (result === 'Error') {
-            currentInput = 'Error';
-            previousValue = null;
-            currentOperator = null;
-            waitingForNewNumber = false;
-            justPressedOperator = false;
-            updateDisplay();
-            return;
-          }
-          currentInput = result;
-          previousValue = result;
-          currentOperator = op;
-          waitingForNewNumber = true;
-          justPressedOperator = true;
-        }
-        updateDisplay();
-      }
-
-      // ---------- 一元运算（三角函数、平方、立方、开方） ----------
-      function handleUnary(operation) {
-        if (currentInput === 'Error') {
-          resetCalculator();
-          return;
-        }
-
-        const num = parseFloat(currentInput);
-        if (isNaN(num)) return;
-
-        let result;
-        let historyText = '';
-
-        switch (operation) {
-          case 'sin':
-            result = Math.sin(num * Math.PI / 180);
-            if (Math.abs(result) < 1e-12) result = 0;
-            historyText = `sin(${num}°)`;
-            break;
-
-          case 'cos':
-            result = Math.cos(num * Math.PI / 180);
-            if (Math.abs(result) < 1e-12) result = 0;
-            historyText = `cos(${num}°)`;
-            break;
-
-          case 'tan':
-            result = Math.tan(num * Math.PI / 180);
-            // tan(90°) 等无定义情况
-            if (!isFinite(result) || Math.abs(result) > 1e15) {
-              currentInput = 'Error';
-              previousValue = null;
-              currentOperator = null;
-              waitingForNewNumber = false;
-              justPressedOperator = false;
-              previousEl.textContent = `tan(${num}°)`;
-              updateDisplay();
-              return;
+      function render() {
+        const frag = document.createDocumentFragment();
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            const val = board[r][c];
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            if (val > 0) {
+              tile.classList.add(val <= 2048 ? 'tile-' + val : 'tile-super');
+              tile.textContent = val;
             }
-            if (Math.abs(result) < 1e-12) result = 0;
-            historyText = `tan(${num}°)`;
-            break;
-
-          case 'x²':
-            result = num * num;
-            historyText = `(${num})²`;
-            break;
-
-          case 'x³':
-            result = num * num * num;
-            historyText = `(${num})³`;
-            break;
-
-          case '√':
-            if (num < 0) {
-              currentInput = 'Error';
-              previousValue = null;
-              currentOperator = null;
-              waitingForNewNumber = false;
-              justPressedOperator = false;
-              previousEl.textContent = `√(${num})`;
-              updateDisplay();
-              return;
-            }
-            result = Math.sqrt(num);
-            historyText = `√(${num})`;
-            break;
-
-          default:
-            return;
+            frag.appendChild(tile);
+          }
         }
-
-        currentInput = formatNumber(result);
-        previousEl.textContent = historyText;
-        waitingForNewNumber = false;
-        justPressedOperator = false;
-        updateDisplay();
+        gridEl.innerHTML = '';
+        gridEl.appendChild(frag);
       }
 
-      // ---------- 等于号 ----------
-      function handleEquals() {
-        if (currentInput === 'Error') {
-          resetCalculator();
-          return;
-        }
-
-        if (previousValue !== null && currentOperator !== null) {
-          let secondOperand;
-          if (waitingForNewNumber) {
-            secondOperand = previousValue;
-            currentInput = previousValue;
+      // 滑动一行/列（已按移动方向排列），返回结果和是否移动
+      function slide(line) {
+        const arr = line.filter(v => v !== 0);
+        const result = [];
+        let scoreAdd = 0;
+        for (let i = 0; i < arr.length; i++) {
+          if (i + 1 < arr.length && arr[i] === arr[i + 1]) {
+            const merged = arr[i] * 2;
+            result.push(merged);
+            scoreAdd += merged;
+            i++;
           } else {
-            secondOperand = currentInput;
+            result.push(arr[i]);
           }
+        }
+        while (result.length < SIZE) result.push(0);
 
-          const result = calculate(previousValue, currentOperator, secondOperand);
-          if (result === 'Error') {
-            currentInput = 'Error';
-            previousValue = null;
-            currentOperator = null;
-            waitingForNewNumber = false;
-            justPressedOperator = false;
-            updateDisplay();
-            return;
+        let moved = false;
+        for (let i = 0; i < SIZE; i++) {
+          if (result[i] !== line[i]) { moved = true; break; }
+        }
+        return { line: result, moved, scoreAdd };
+      }
+
+      function move(direction) {
+        if (gameOver) return;
+        if (won && !keepPlaying) return;
+
+        let moved = false;
+        let gained = 0;
+
+        if (direction === 'left' || direction === 'right') {
+          for (let r = 0; r < SIZE; r++) {
+            let line = board[r].slice();
+            if (direction === 'right') line.reverse();
+            const res = slide(line);
+            if (res.moved) moved = true;
+            gained += res.scoreAdd;
+            if (direction === 'right') res.line.reverse();
+            board[r] = res.line;
           }
-          previousEl.textContent = `${previousValue} ${currentOperator} ${secondOperand} =`;
-          currentInput = result;
-          previousValue = null;
-          currentOperator = null;
-          waitingForNewNumber = true;
-          justPressedOperator = false;
-          updateDisplay();
+        } else {
+          for (let c = 0; c < SIZE; c++) {
+            let line = board.map(row => row[c]);
+            if (direction === 'down') line.reverse();
+            const res = slide(line);
+            if (res.moved) moved = true;
+            gained += res.scoreAdd;
+            if (direction === 'down') res.line.reverse();
+            for (let r = 0; r < SIZE; r++) board[r][c] = res.line[r];
+          }
+        }
+
+        if (moved) {
+          score += gained;
+          addRandomTile();
+          render();
+          updateScore();
+          checkGameState();
         }
       }
 
-      // ---------- 事件绑定 ----------
-      document.querySelectorAll('.buttons button').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          const value = btn.value;
-
-          if (value >= '0' && value <= '9') {
-            handleNumber(value);
-          } else if (value === '.') {
-            handleDecimal();
-          } else if (value === '+' || value === '-' || value === '×' || value === '÷' || value === '^') {
-            handleOperator(value);
-          } else if (value === 'sin' || value === 'cos' || value === 'tan' ||
-                     value === 'x²' || value === 'x³' || value === '√') {
-            handleUnary(value);
-          } else if (value === '=') {
-            handleEquals();
+      function checkGameState() {
+        if (!won && !keepPlaying) {
+          for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+              if (board[r][c] === 2048) {
+                won = true;
+                showOverlay('🎉 你赢了！', true);
+                return;
+              }
+            }
           }
-        });
+        }
+        if (!canMove()) {
+          gameOver = true;
+          showOverlay('游戏结束', false);
+        }
+      }
+
+      function canMove() {
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === 0) return true;
+          }
+        }
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            const v = board[r][c];
+            if (c + 1 < SIZE && board[r][c + 1] === v) return true;
+            if (r + 1 < SIZE && board[r + 1][c] === v) return true;
+          }
+        }
+        return false;
+      }
+
+      function showOverlay(text, isWin) {
+        overlayTextEl.textContent = text;
+        overlayEl.classList.toggle('win', isWin);
+        overlayEl.classList.add('show');
+        overlayBtn.textContent = isWin ? '继续游戏' : '再来一局';
+      }
+
+      // 键盘
+      document.addEventListener('keydown', (e) => {
+        const keyMap = {
+          ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+          w: 'up', s: 'down', a: 'left', d: 'right',
+          W: 'up', S: 'down', A: 'left', D: 'right'
+        };
+        const dir = keyMap[e.key];
+        if (dir) {
+          e.preventDefault();
+          move(dir);
+        }
       });
 
-      updateDisplay();
+      // 触摸滑动
+      let touchStartX = 0, touchStartY = 0;
+      document.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        if (e.changedTouches.length === 1) {
+          const dx = e.changedTouches[0].clientX - touchStartX;
+          const dy = e.changedTouches[0].clientY - touchStartY;
+          const absDx = Math.abs(dx), absDy = Math.abs(dy);
+          if (Math.max(absDx, absDy) > 30) {
+            if (absDx > absDy) move(dx > 0 ? 'right' : 'left');
+            else move(dy > 0 ? 'down' : 'up');
+          }
+        }
+      }, { passive: true });
+
+      // 按钮
+      overlayBtn.addEventListener('click', () => {
+        if (won && !keepPlaying) {
+          keepPlaying = true;
+          overlayEl.classList.remove('show');
+        } else {
+          init();
+        }
+      });
+
+      newGameBtn.addEventListener('click', init);
+
+      init();
     })();
   </script>
 </body>
